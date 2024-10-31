@@ -43,6 +43,9 @@ if view == 'Date':
 
     # Filter data based on selected date
     filtered_data = df[df['Date'].dt.strftime('%Y-%m-%d') == selected_date]
+    #TEST LINE
+    filtered_data['Date']=filtered_data['Date'].dt.strftime('%Y-%m-%d')
+    #END TEST LINE
     st.subheader(f'Runners on {selected_date}')
     st.table(filtered_data)
 
@@ -56,7 +59,7 @@ elif view == 'Student Name':
     )
 
     # Inline filter using a selectbox for Year
-    year_options = ['All'] + df['Year'].unique().tolist()  # Add 'All' option to view all years
+    year_options = ['All'] + df['Year'].sort_values().unique().tolist()  # Add 'All' option to view all years
     selected_year = st.selectbox('Select Year', year_options)
 
     # Filter top runners based on selected year
@@ -78,8 +81,12 @@ elif view == 'Student Name':
     st.table(filtered_runners)
 
     # Search for specific runner and display their attendances
+    st.subheader('Search for a runner:')
     selected_student = st.selectbox('Select a Student', df['Student Name'].unique())
     student_data = df[df['Student Name'] == selected_student]
+    #TEST LINE
+    student_data['Date'] = student_data['Date'].dt.strftime('%Y-%m-%d')
+    #END TEST LINE
     st.subheader(f'Attendance for {selected_student}')
     st.table(student_data)
 
