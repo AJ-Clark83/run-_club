@@ -36,8 +36,14 @@ if view == 'Date':
 
     st.subheader('Total Runs by Date')
     st.table(runs_per_day)
+    
+    # Test line chart #
+    st.subheader('Total Runs Trend')
+    st.line_chart(data=runs_per_day, x='Date', y='Total Runs', use_container_width=True)
+    # End Test Line Chart
 
     # Date-specific filter
+    st.subheader('Attendance by Date')
     date_options = df['Date'].dt.strftime('%Y-%m-%d').unique()
     selected_date = st.selectbox('Select a Date', date_options)
 
