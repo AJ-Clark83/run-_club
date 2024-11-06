@@ -1,62 +1,77 @@
 import pandas as pd
 import streamlit as st
 
+# Load data
 url = 'https://docs.google.com/spreadsheets/d/1pOxce5luIYRygXP90dh01-HdXaW2-9i4wkGyK3ycYIo/export?format=csv&gid=20815831'
-
 df = pd.read_csv(url)
 
-
-# Conver Runners Name to lower Case and strip whitespace
+# Data cleaning and formatting
 df['Student Name'] = df['Student Name'].str.lower().str.strip()
-# Make date time correct format
-df['Timestamp'] = pd.to_datetime(df['Timestamp'],dayfirst=True)
-# Create Simple Date Column for Grouping
-df['Date'] = df['Timestamp'].dt.date
-df['Date'] = pd.to_datetime(df['Date'])
-df['Room Number'] = df['Room Number'].str.lower().str.strip()
-df['Room Number'] = df['Room Number'].str.replace(r'\broom\b\s*', '', regex=True)
-df['Room Number'] = df['Room Number'].str.replace('kindy c','kindy')
-#df['Student Name'] = df['Student Name'].str.replace(r'\lachlan s \b\s*', 'lachlan sucksmith',regex=True)
-df = df.drop(labels=['Laps Completed (Sprints / Laps)','Timestamp'],axis=1)
+df['Timestamp'] = pd.to_datetime(df['Timestamp'], dayfirst=True)
+df['Date'] = pd.to_datetime(df['Timestamp'].dt.date)
+df['Room Number'] = df['Room Number'].str.lower().str.strip().str.replace(r'\broom\b\s*', '', regex=True)
+df['Room Number'] = df['Room Number'].str.replace('kindy c', 'kindy')
+df = df.drop(labels=['Laps Completed (Sprints / Laps)', 'Timestamp'], axis=1)
 
-# Sidebar Filters
-st.sidebar.header('Filter Data')
-view = st.sidebar.selectbox('View Stats By', ['Student Name','Date'])
+# Main layout for filters
+st.title('Carnaby Running Club Stats')
 
-# Main area
-st.title('Running Club Stats')
+# Move filters to the main page
+view = st.selectbox('View Stats By', ['Student Name', 'Date'], key='view_selector')
+
+st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
 
 if view == 'Date':
-    # Group by Date to show the total number of runs
-    runs_per_day = df.groupby('Date')['Student Name'].count().reset_index()
-    runs_per_day.columns = ['Date', 'Total Runs']
-
-    # Format the Date column to YYYY-MM-DD
-    runs_per_day['Date'] = runs_per_day['Date'].dt.strftime('%Y-%m-%d')
-
-    st.subheader('Total Runs by Date')
-    st.table(runs_per_day)
+    # Title
+    st.header('Run Data By Date')
     
-    # Test line chart #
-    st.subheader('Total Runs Trend')
-    st.line_chart(data=runs_per_day, x='Date', y='Total Runs', use_container_width=True)
-    # End Test Line Chart
-
+    st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
+    
     # Date-specific filter
     st.subheader('Attendance by Date')
     date_options = df['Date'].dt.strftime('%Y-%m-%d').unique()
-    selected_date = st.selectbox('Select a Date', date_options)
+    selected_date = st.selectbox('Select a Date', date_options, key='date_filter')
 
     # Filter data based on selected date
     filtered_data = df[df['Date'].dt.strftime('%Y-%m-%d') == selected_date]
-    #TEST LINE
-    filtered_data['Date']=filtered_data['Date'].dt.strftime('%Y-%m-%d')
-    #END TEST LINE
+    filtered_data['Date'] = filtered_data['Date'].dt.strftime('%Y-%m-%d')
+
+    # Display total runs per day
+    runs_per_day = df.groupby('Date')['Student Name'].count().reset_index()
+    runs_per_day.columns = ['Date', 'Total Runs']
+    runs_per_day['Date'] = runs_per_day['Date'].dt.strftime('%Y-%m-%d')
+
+    st.subheader('Total Runs by Date')
+    st.dataframe(runs_per_day, hide_index=True, use_container_width=True)
+    st.subheader('Total Runs Trend')
+    st.line_chart(data=runs_per_day, x='Date', y='Total Runs', use_container_width=True)
+
     st.subheader(f'Runners on {selected_date}')
-    st.table(filtered_data)
+    st.dataframe(filtered_data, hide_index=True, use_container_width=True)
+
+    # Room-level statistics
+    room_stats = (
+        df.groupby('Room Number')['Student Name']
+        .nunique()
+        .reset_index()
+        .rename(columns={'Student Name': 'Unique Runners'})
+        .sort_values(by='Unique Runners', ascending=False)
+        .reset_index(drop=True)
+    )
+    st.subheader('Runners by Room')
+    st.dataframe(room_stats, hide_index=True, use_container_width=True)
 
 elif view == 'Student Name':
-    # Group by Student Name, Year, and Room Number to count the number of days each student ran
+    
+    # Title
+    st.header('Run Data By Student')
+    
+    st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
+    
+    # Year and days run filters
+    year_options = ['All'] + df['Year'].sort_values().unique().tolist()
+    selected_year = st.selectbox('Select School Year', year_options, key='year_filter')
+    
     top_runners = (
         df.groupby(['Student Name', 'Year', 'Room Number'])
         .size()
@@ -64,47 +79,17 @@ elif view == 'Student Name':
         .sort_values(by='Days Run', ascending=False)
     )
 
-    # Inline filter using a selectbox for Year
-    year_options = ['All'] + df['Year'].sort_values().unique().tolist()  # Add 'All' option to view all years
-    selected_year = st.selectbox('Select Year', year_options)
-
-    # Filter top runners based on selected year
-    if selected_year != 'All':
-        filtered_runners = top_runners[top_runners['Year'] == selected_year]
-    else:
-        filtered_runners = top_runners
-
-    # Slider for minimum days run (applies to selected year filter)
-    min_days = st.slider('Minimum Days Run', 
-                         min_value=1, 
-                         max_value=filtered_runners['Days Run'].max(), 
-                         value=1)
-
-    # Apply the slider filter
+    filtered_runners = top_runners if selected_year == 'All' else top_runners[top_runners['Year'] == selected_year]
+    min_days = st.slider('Minimum Days Run', min_value=1, max_value=filtered_runners['Days Run'].max(), value=1, key='min_days_filter')
     filtered_runners = filtered_runners[filtered_runners['Days Run'] >= min_days]
 
     st.subheader(f'Top Runners ({selected_year}, Min {min_days} Days)')
     st.table(filtered_runners)
 
-    # Search for specific runner and display their attendances
-    st.subheader('Search for a runner:')
-    selected_student = st.selectbox('Select a Student', df['Student Name'].unique())
+    # Runner-specific attendance
+    selected_student = st.selectbox('Select a Student', df['Student Name'].unique(), key='student_filter')
     student_data = df[df['Student Name'] == selected_student]
-    #TEST LINE
     student_data['Date'] = student_data['Date'].dt.strftime('%Y-%m-%d')
-    #END TEST LINE
+
     st.subheader(f'Attendance for {selected_student}')
     st.table(student_data)
-
-# Room-level statistics: Number of unique runners per room
-room_stats = (
-    df.groupby('Room Number')['Student Name']
-    .nunique()
-    .reset_index()
-    .rename(columns={'Student Name': 'Unique Runners'})
-    .sort_values(by='Unique Runners', ascending=False)  # Sort by Unique Runners
-    .reset_index(drop=True)  # Reset index for display
-)
-
-st.subheader('Runners by Room')
-st.table(room_stats)
