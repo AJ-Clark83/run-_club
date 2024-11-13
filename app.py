@@ -24,7 +24,6 @@ st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsaf
 if view == 'Date':
     # Title
     st.header('Run Data By Date')
-    
     st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
     
     # Date-specific filter
@@ -46,9 +45,6 @@ if view == 'Date':
     st.subheader('Total Runs Trend')
     st.line_chart(data=runs_per_day, x='Date', y='Total Runs', use_container_width=True)
 
-    st.subheader(f'Runners on {selected_date}')
-    st.dataframe(filtered_data, hide_index=True, use_container_width=True)
-
     # Room-level statistics
     room_stats = (
         filtered_data.groupby(['Year','Room Number'])['Student Name']
@@ -58,8 +54,22 @@ if view == 'Date':
         .sort_values(by='Unique Runners', ascending=False)
         .reset_index(drop=True)
     )
+    
     st.subheader('Runners by Year and Room For Seleced Date')
     st.dataframe(room_stats, hide_index=True, use_container_width=True)
+    
+    # Runner List By Date and Room
+    st.subheader(f'Runners on {selected_date} for Selected Room')
+    # add year and room number filter
+    rooms = df['Room Number'].unique()
+    selected_rooms = st.selectbox('Select a Room', rooms, key='room_filter')
+    
+    filtered_data = df[df['Date'].dt.strftime('%Y-%m-%d') == selected_date]
+    rooms_filtered_data = filtered_data.copy()
+    rooms_filtered_data['Date'] = rooms_filtered_data['Date'].dt.strftime('%Y-%m-%d')
+    rooms_filtered_data = rooms_filtered_data[rooms_filtered_data['Room Number']==selected_rooms]
+        
+    st.dataframe(rooms_filtered_data, hide_index=True, use_container_width=True)
 
 elif view == 'Student Name':
     
