@@ -51,14 +51,14 @@ if view == 'Date':
 
     # Room-level statistics
     room_stats = (
-        df.groupby('Room Number')['Student Name']
+        filtered_data.groupby(['Year','Room Number'])['Student Name']
         .nunique()
         .reset_index()
         .rename(columns={'Student Name': 'Unique Runners'})
         .sort_values(by='Unique Runners', ascending=False)
         .reset_index(drop=True)
     )
-    st.subheader('Runners by Room')
+    st.subheader('Runners by Year and Room For Seleced Date')
     st.dataframe(room_stats, hide_index=True, use_container_width=True)
 
 elif view == 'Student Name':
