@@ -57,6 +57,11 @@ if view == 'Date':
     
     # Plot the line chart with m-d-y formatted dates on the x-axis
     st.line_chart(runs_per_day['Total Runs'], use_container_width=True)
+    
+    # Total unique runners by room
+    unique_count = len(df['Student Name'].unique())
+    st.subheader('Total Unique Runners')
+    st.write(f'Number of unique students: {unique_count}')
 
     # Room-level statistics
     room_stats = (
