@@ -58,7 +58,7 @@ if view == 'Date':
     # Plot the line chart with m-d-y formatted dates on the x-axis
     st.line_chart(runs_per_day['Total Runs'], use_container_width=True)
     
-    # Total unique runners by room
+    # Total unique runners
     unique_count = len(df['Student Name'].unique())
     st.subheader('Total Unique Runners')
     st.write(f'Number of unique students: {unique_count}')
@@ -113,6 +113,11 @@ elif view == 'Student Name':
 
     st.subheader(f'Top Runners ({selected_year}, Min {min_days} Days)')
     st.table(filtered_runners)
+    
+    # Total unique runners
+    unique_count_filtered = len(filtered_runners['Student Name'].unique())
+    st.subheader(f'Numnber of Unique Runners ({selected_year}, Min {min_days} Days)')
+    st.write(f'Number of unique students: {unique_count_filtered}')
 
     # Runner-specific attendance
     selected_student = st.selectbox('Select a Student', df['Student Name'].unique(), key='student_filter')
