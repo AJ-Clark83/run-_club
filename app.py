@@ -50,10 +50,11 @@ if view == 'Date':
     runs_per_day = runs_per_day.sort_values(by='Date')
     
     # Format 'Date' as 'm-d-y' for display on the x-axis
-    runs_per_day['Date_Display'] = runs_per_day['Date'].dt.strftime('%m-%d-%Y')
+    runs_per_day['Date_Display'] = runs_per_day['Date'].dt.strftime('%Y-%m-%d')
     
     # Set 'Date_Display' as the index for correct display order
     runs_per_day.set_index('Date_Display', inplace=True)
+        
     
     # Plot the line chart with m-d-y formatted dates on the x-axis
     st.line_chart(runs_per_day['Total Runs'], use_container_width=True)
